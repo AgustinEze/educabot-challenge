@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import metricsHandler from './metrics'
+import {MetricsHandler} from './metrics'
 import { Request, Response } from 'express'
-import { BooksProvider } from '../providers/books'
+import { BooksProvider } from '../providers/booksProvider'
 import { Book } from '../models/book'
 
 describe('metricsHandler', () => {
@@ -11,7 +11,7 @@ describe('metricsHandler', () => {
     { id: 2, name: 'Book 2', author: 'Author 2', unitsSold: 200, price: 15 },
     { id: 3, name: 'Book 3', author: 'Author 1', unitsSold: 300, price: 25 }
   ]
-
+  
   // Mock BooksProvider
   const mockBooksProvider: BooksProvider = {
     getBooks: vi.fn().mockReturnValue(mockBooks)

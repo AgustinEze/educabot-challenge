@@ -1,0 +1,1 @@
+export const BOOKS_URL = "https://6781684b85151f714b0aa5db.mockapi.io/api/v1/books"

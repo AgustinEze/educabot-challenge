@@ -1,49 +1,46 @@
-import { Request, Response } from 'express'
-import { BooksProvider } from '../providers/books.ts'
-import { Book } from '../models/book.ts'
+import { Request, Response } from "express";
+import { IBooksRepository } from "../repositories/booksRepository.type.ts";
+import { MetricsUtils } from "./metrics.utils.ts";
+import { Book } from "../models/book.ts";
 
 interface GetMetricsQuery {
-  author?: string
+  author?: string;
+}
+interface IMetricsHandler {
+  get: (
+    req: Request<{}, {}, {}, GetMetricsQuery>,
+    res: Response<ResponseType>
+  ) => Promise<void>;
 }
 
-const metricsHandler = (metricsProvider: BooksProvider) => {
+interface ResponseType {
+  mean_units_sold: number;
+  cheapest_book: Book | null;
+  books_written_by_author: Book[];
+}
+export class MetricsHandler implements IMetricsHandler {
+  booksRepository: IBooksRepository;
+  constructor(booksRepository: IBooksRepository) {
+    this.booksRepository = booksRepository;
+  }
 
-  const get = async (req: Request<{}, {}, {}, GetMetricsQuery>, res: Response<any>) => {
-
-    const { author } = req.query
-    const books = metricsProvider.getBooks()
-
-    const meanUnitsSold = getMeanUnitsSold(books)
-    const cheapestBook = getCheapestBook(books)
-    const booksWrittenByAuthor = author ? getBooksWrittenByAuthor(books, author) : []
+  get = async (
+    req: Request<{}, {}, {}, GetMetricsQuery>,
+    res: Response<ResponseType>
+  ) => {
+    const { author } = req.query;
+    const books = await this.booksRepository.getBooks();
+    const metricsUtils = new MetricsUtils();
+    const meanUnitsSold = metricsUtils.getMeanUnitsSold(books);
+    const cheapestBook = metricsUtils.getCheapestBook(books);
+    const booksWrittenByAuthor = author
+      ? metricsUtils.getBooksWrittenByAuthor(books, author)
+      : [];
 
     res.status(200).json({
       mean_units_sold: meanUnitsSold,
       cheapest_book: cheapestBook,
       books_written_by_author: booksWrittenByAuthor,
-    })
-  }
-
-  return {
-    get,
-  }
+    });
+  };
 }
-
-const getMeanUnitsSold: any = (books: Book[]) => {
-  if (books.length === 0) return 0
-  const totalUnitsSold = books.reduce((sum, book) => sum + book.unitsSold, 0)
-  return totalUnitsSold / books.length
-}
-
-const getCheapestBook: any = (books: Book[]) => {
-  if (books.length === 0) return null
-  return books.reduce((cheapest, book) => {
-    return book.price < cheapest.price ? book : cheapest
-  }, books[0])
-}
-
-const getBooksWrittenByAuthor: any = (books: Book[], author: string) => {
-  return books.filter(book => book.author.toLowerCase() === author.toLowerCase())
-}
-
-export default metricsHandler
